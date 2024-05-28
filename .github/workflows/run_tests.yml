@@ -1,0 +1,44 @@
+name: "Unit tests"
+
+on:
+    workflow_dispatch:
+    pull_request:
+        branches:
+            - "main"
+
+concurrency:
+    group: xcresultkit-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    unit-tests:
+        name: "Run tests (${{ matrix.platform }})"
+        runs-on: ${{ matrix.runs-on }}
+
+        strategy:
+            fail-fast: true
+            matrix:
+                include:
+                    - runs-on: "macos-14"
+                      platform: "macOS"
+                      xcbeautify: "| xcbeautify"
+
+                    - runs-on: "ubuntu-latest"
+                      platform: "Linux"
+                      xcbeautify: ""
+
+        steps:
+            - name: "Setup swift"
+              id: setup-swift
+              uses: fwal/setup-swift@v1
+              if: runner.os == 'Linux'
+
+            - name: "Repo checkout"
+              id: repo-checkout
+              uses: actions/checkout@v4
+
+            - name: "Build and test"
+              id: build-and-test
+              run: |
+                  swift build -c release ${{ matrix.xcbeautify }}
+                  swift test ${{ matrix.xcbeautify }}
